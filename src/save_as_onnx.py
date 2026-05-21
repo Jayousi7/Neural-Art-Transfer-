@@ -9,7 +9,7 @@ def export_to_onnx():
     decoder = Decoder()
     model = StyleTransferModel(encoder, decoder)
 
-    weights_path = "checkpoints/decoder_epoch_5.pth" 
+    weights_path = "checkpoints/decoder_epoch_20.pth" 
     
     print(f"Loading weights from {weights_path}...")
     decoder.load_state_dict(torch.load(weights_path, map_location="cpu"))

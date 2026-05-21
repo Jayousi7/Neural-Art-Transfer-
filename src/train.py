@@ -46,7 +46,7 @@ def train(encoder,decoder,content_dir,style_dir,num_epochs=20,batch_size = 16,sa
         transforms.ToTensor()])
 
     dataset = NeuralArtTransferDataset(content_dir, style_dir, transform=transform)
-    MAX_IMAGES = 1600
+    MAX_IMAGES = 1600 * 5
     subset_indices = torch.randperm(len(dataset))[:MAX_IMAGES].tolist()
     mini_dataset = torch.utils.data.Subset(dataset, subset_indices)
     dataloader = torch.utils.data.DataLoader(mini_dataset, batch_size=batch_size, shuffle=True,num_workers=8, drop_last=True)
@@ -82,7 +82,7 @@ def main():
         decoder=decoder, 
         content_dir=CONTENT_DIR, 
         style_dir=STYLE_DIR, 
-        num_epochs=5,          
+        num_epochs=20,          
         batch_size=32,      
         save_dir="checkpoints"
     )
