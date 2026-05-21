@@ -12,8 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 sys.path.insert(0, "src")
-from model import VGG19Gatys
-from utils import get_normalize_transform, denormalize, gram_matrix
+from src.model import VGG19Gatys
+from src.utils import get_normalize_transform, denormalize, gram_matrix
 
 app = FastAPI(title="Neural Art Studio")
 
@@ -26,6 +26,7 @@ app.add_middleware(
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device.type)
 model = VGG19Gatys().to(device).eval()
 
 normalize = get_normalize_transform()
@@ -43,14 +44,14 @@ def load_image_tensor(image_bytes):
     return tensor, original_size
 
 @app.post("/api/style")
-async def style_transfer_endpoint(
+def style_transfer_endpoint(
     content: UploadFile = File(...),
     style: UploadFile = File(...),
     alpha: float = Form(1.0),
 ):
     try:
-        content_bytes = await content.read()
-        style_bytes = await style.read()
+        content_bytes = content.file.read()
+        style_bytes = style.file.read()
 
         content_tensor, original_size = load_image_tensor(content_bytes)
         style_tensor, _ = load_image_tensor(style_bytes)
@@ -60,7 +61,7 @@ async def style_transfer_endpoint(
 
         optimizing_img = content_norm.clone().requires_grad_(True)
 
-        style_weights = [1.0, 1.0, 1.0, 1.0, 1.0] 
+        style_weights = [500.0, 300.0, 100.0, 50.0, 50.0]
         
         with torch.no_grad():
             target_style_features, _ = model(style_norm)
@@ -68,7 +69,7 @@ async def style_transfer_endpoint(
             _, target_content_features = model(content_norm)
 
         base_content_weight = 1.0
-        base_style_weight = 1000000.0 * max(0.01, alpha) 
+        base_style_weight = 1e4 * max(0.01, alpha)
         
         optimizer = LBFGS([optimizing_img], max_iter=100)
 

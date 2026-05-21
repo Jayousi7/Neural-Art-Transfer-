@@ -8,8 +8,28 @@ High-quality neural style transfer using the optimization-based method originall
 
 ### 1. Install dependencies
 
+First, install the standard dependencies:
+
 ```bash
 pip install -r requirements.txt
+```
+
+**For NVIDIA GPU Users (Highly Recommended):**
+Neural style transfer runs much faster on a GPU. To enable GPU acceleration, install the CUDA-enabled version of PyTorch by running one of the commands below depending on your CUDA version:
+
+```bash
+
+# uninstall cpu version 
+pip uninstall torch torchvision
+
+```
+```bash
+# For CUDA 12.6
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+```
+```bash
+# For CUDA 13.0
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 ```
 
 ### 2. Run the app
