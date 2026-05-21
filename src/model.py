@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from src.utils import adain
+from utils import adain
 
 class ResNet50Encoder(nn.Module):
     def __init__(self):
@@ -22,12 +22,12 @@ class ResNet50Encoder(nn.Module):
             param.requires_grad = False
         
     def forward(self, x):
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
-        x = self.stage4(x)
+        h1 = self.stage1(x)
+        h2= self.stage2(h1)
+        h3= self.stage3(h2)
+        h4 = self.stage4(h3)
 
-        return x
+        return h1, h2, h3, h4
 
 class Decoder(nn.Module):
     def __init__(self):
@@ -38,22 +38,22 @@ class Decoder(nn.Module):
         self.decoder = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d(1),  
-            nn.Conv2d(1024, 512, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(1024, 512, kernel_size=3, stride=1, padding=0),
             nn.ReLU(),
 
             nn.Upsample(scale_factor=2, mode='nearest'),
             nn.ReflectionPad2d(1),
-            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(),
 
             nn.Upsample(scale_factor=2,mode='nearest'),
             nn.ReflectionPad2d(1),
-            nn.Conv2d(256,64,kernel_size=3,stride=1,padding=1),
+            nn.Conv2d(256,64,kernel_size=3,stride=1,padding=0),
             nn.ReLU(),
 
             nn.Upsample(scale_factor=2,mode='nearest'),
             nn.ReflectionPad2d(1),
-            nn.Conv2d(64,3,kernel_size=3,stride=1,padding=1),
+            nn.Conv2d(64,3,kernel_size=3,stride=1,padding=0),
         )
     def forward(self,x):
         return self.decoder(x)
@@ -66,10 +66,11 @@ class StyleTransferModel(nn.Module):
         self.decoder = decoder
     
     def forward(self,content_img,style_img,alpha=1.0):
-        content_feat = self.encoder(content_img)
-        style_feat = self.encoder(style_img)
+        content_feats = self.encoder(content_img)
+        style_feats = self.encoder(style_img)
 
-        blended_feat = adain(content_feat,style_feat,alpha)
+        # Grab only the deepest layer for the AdaIN transfer
+        blended_feat = adain(content_feats[-1], style_feats[-1], alpha)
 
         stylized_img = self.decoder(blended_feat)
 

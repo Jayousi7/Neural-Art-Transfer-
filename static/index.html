@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Art Studio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Fixed typo: control-panel instead of control=panel -->
+        <div class="control-panel">
+            <h2>Neural Art Studio</h2>
+            <p class="subtitle">Style blending workspace</p>
+            
+            <div class="upload-section">
+                <label>Content Image</label>
+                <input type="file" id="contentInput" accept="image/*">
+            </div>
+
+            <div class="upload-section">
+                <label>Style Image</label>
+                <input type="file" id="styleInput" accept="image/*">
+            </div>
+
+            <div class="slider-section">
+                <div class="slider-labels">
+                    <label for="thresholdSlider">Style Strength</label>
+                    <span id="sliderValue">80%</span>
+                </div>
+                <!-- Removed commas between attributes -->
+                <input type="range" id="thresholdSlider" min="0" max="100" value="80">
+            </div>
+
+            <!-- Standardized ID spelling to generateBtn -->
+            <button id="generateBtn">Generate</button>
+            <div id="loader" class="hidden">Processing on GPU...</div>
+        </div>
+
+        <div class="workspace">
+            <div class="canvas-container">
+                <canvas id="studioCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

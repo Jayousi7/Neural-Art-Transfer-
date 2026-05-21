@@ -4,9 +4,9 @@ from torchvision import transforms
 from tqdm import tqdm
 import os
 
-from src.model import ResNet50Encoder,Decoder
-from src.utils import adain,calc_content_loss,calc_style_loss
-from src.Dataset import NeuralArtTransferDataset
+from model import ResNet50Encoder,Decoder
+from utils import adain,calc_content_loss,calc_style_loss
+from Dataset import NeuralArtTransferDataset
 
 def training_step(content_image,style_image,encoder,decoder,optimizer,style_weight=10.0):
     optimizer.zero_grad()
@@ -46,7 +46,10 @@ def train(encoder,decoder,content_dir,style_dir,num_epochs=20,batch_size = 16,sa
         transforms.ToTensor()])
 
     dataset = NeuralArtTransferDataset(content_dir, style_dir, transform=transform)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    MAX_IMAGES = 1600
+    subset_indices = torch.randperm(len(dataset))[:MAX_IMAGES].tolist()
+    mini_dataset = torch.utils.data.Subset(dataset, subset_indices)
+    dataloader = torch.utils.data.DataLoader(mini_dataset, batch_size=batch_size, shuffle=True,num_workers=8, drop_last=True)
 
     os.makedirs(save_dir, exist_ok=True)
 
@@ -63,4 +66,26 @@ def train(encoder,decoder,content_dir,style_dir,num_epochs=20,batch_size = 16,sa
             loop.set_postfix(loss = total_loss, content_loss = content_loss, style_loss = style_loss)
         
         torch.save(decoder.state_dict(), os.path.join(save_dir, f"decoder_epoch_{epoch+1}.pth"))
-        
+        print(f"Saved checkpoint for epoch {epoch+1}")
+
+
+def main():
+    CONTENT_DIR = "./datasets/coco/train2017"
+    STYLE_DIR = "./datasets/wikiart" 
+    print("Initializing networks...")
+    encoder = ResNet50Encoder()
+    decoder = Decoder()
+    
+    print("Starting training loop...")
+    train(
+        encoder=encoder, 
+        decoder=decoder, 
+        content_dir=CONTENT_DIR, 
+        style_dir=STYLE_DIR, 
+        num_epochs=5,          
+        batch_size=32,      
+        save_dir="checkpoints"
+    )
+
+if __name__ == "__main__":
+    main()

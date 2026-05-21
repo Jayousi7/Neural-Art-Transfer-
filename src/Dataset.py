@@ -1,28 +1,39 @@
 import os
-import random 
+import random
 from PIL import Image
-from torch.utils.data import Dataset,DataLoader
-import torchvision.transforms as transforms
+from torch.utils.data import Dataset
 
 class NeuralArtTransferDataset(Dataset):
-    def __init__(self,content_dir,style_dir,transform=None):
-        self.content_paths = [os.path.join(content_dir,f) for f in os.listdir(content_dir) if f.endswith(('.jpg','.png','.jpeg'))]
-        self.style_paths = [os.path.join(style_dir,f) for f in os.listdir(style_dir) if f.endswith(('.jpg','.png','.jpeg'))]
+    def __init__(self, content_dir, style_dir, transform=None):
+        self.content_paths = [
+            os.path.join(content_dir, f) 
+            for f in os.listdir(content_dir) 
+            if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+        ]
+        
+        self.style_paths = []
+        for root, dirs, files in os.walk(style_dir):
+            for f in files:
+                if f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    self.style_paths.append(os.path.join(root, f))
+                    
         self.transform = transform
+        
+        # Sanity check to confirm data is loaded
+        print(f"--> Found {len(self.content_paths)} Content Images")
+        print(f"--> Found {len(self.style_paths)} Style Images")
 
     def __len__(self):
-
         return len(self.content_paths)
-    
-    def __getitem__(self,idx):
-        content_path = self.content_paths[idx]
-        style_path = random.choice(self.style_paths)
 
-        content_image = Image.open(content_path).convert('RGB')
-        style_image = Image.open(style_path).convert('RGB')
-
+    def __getitem__(self, idx):
+        content_img = Image.open(self.content_paths[idx]).convert('RGB')
+        
+        style_idx = random.randint(0, len(self.style_paths) - 1)
+        style_img = Image.open(self.style_paths[style_idx]).convert('RGB')
+        
         if self.transform:
-            content_image = self.transform(content_image)
-            style_image = self.transform(style_image)
-
-        return content_image,style_image
+            content_img = self.transform(content_img)
+            style_img = self.transform(style_img)
+            
+        return content_img, style_img
