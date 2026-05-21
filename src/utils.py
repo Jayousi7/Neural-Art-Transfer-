@@ -1,36 +1,27 @@
 import torch
-import torch.nn.functional as F
+import torchvision.transforms as transforms
 
+MEAN = torch.tensor([0.485, 0.456, 0.406])
+STD = torch.tensor([0.229, 0.224, 0.225])
 
-def calc_mean_std(feat, eps=1e-5):
-    size = feat.size()
-    assert (len(size) == 4)
-    N, C = size[:2]
-    feat_var = feat.view(N, C, -1).var(dim=2) + eps
-    feat_std = feat_var.sqrt().view(N, C, 1, 1)
-    feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
-    return feat_mean, feat_std
+def get_normalize_transform():
+    return transforms.Normalize(mean=MEAN.tolist(), std=STD.tolist())
 
+def denormalize(tensor):
+    device = tensor.device
+    mean = MEAN.view(1, 3, 1, 1).to(device)
+    std = STD.view(1, 3, 1, 1).to(device)
+    tensor = tensor * std + mean
+    return tensor.clamp(0, 1)
 
-def adain(content_feat, style_feat, alpha=1.0):
-    assert (content_feat.size()[:2] == style_feat.size()[:2])
-    size = content_feat.size()
-    style_mean, style_std = calc_mean_std(style_feat)
-    content_mean, content_std = calc_mean_std(content_feat)
-    normalized_feat = (content_feat - content_mean.expand(size)) / content_std.expand(size)
-    stylized_feat = normalized_feat * style_std.expand(size) + style_mean.expand(size)
-    blended_feat = alpha * stylized_feat + (1.0 - alpha) * content_feat
-    return blended_feat
+def gram_matrix(tensor):
+    b, c, h, w = tensor.size()
+    features = tensor.view(b, c, h * w)
+    features_t = features.transpose(1, 2)
+    gram = features.bmm(features_t) / (c * h * w)
+    return gram
 
-
-def calc_content_loss(gen_feat, target_feat):
-    return F.mse_loss(gen_feat, target_feat)
-
-
-def calc_style_loss(gen_feats, style_feats):
-    style_loss = torch.tensor(0.0, dtype=torch.float32, device=gen_feats[0].device)
-    for gen_feat, style_feat in zip(gen_feats, style_feats):
-        gen_mean, gen_std = calc_mean_std(gen_feat)
-        style_mean, style_std = calc_mean_std(style_feat)
-        style_loss += F.mse_loss(gen_mean, style_mean) + F.mse_loss(gen_std, style_std)
-    return style_loss
+def total_variation_loss(img):
+    tv_h = torch.sum(torch.abs(img[:, :, 1:, :] - img[:, :, :-1, :]))
+    tv_w = torch.sum(torch.abs(img[:, :, :, 1:] - img[:, :, :, :-1]))
+    return tv_h + tv_w

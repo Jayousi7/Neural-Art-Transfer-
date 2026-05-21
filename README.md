@@ -1,85 +1,65 @@
 # Neural Art Studio
 
-A neural style transfer app that blends the content of one image with the artistic style of another. Built with PyTorch (ResNet50 encoder + custom decoder), served as a web app via FastAPI + ONNX Runtime.
+High-quality neural style transfer using the optimization-based method originally proposed by Gatys et al. (2015). Drop in a content image and a style image, adjust the style strength slider, and watch the image optimize in the background. 
 
 ![preview](static/preview.png)
 
-## Quick Start (Docker)
+## Quick Start
+
+### 1. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Run the app
+
+```bash
+python inference.py
+```
+
+Open [http://localhost:8000](http://localhost:8000). Pick a style, upload a photo, and click Generate.
+
+> **Note**: Because this uses the Gatys optimization method, image generation takes time (around 10-30 seconds depending on your hardware) as it runs 100 steps of gradient descent using L-BFGS.
+
+## Docker
 
 ```bash
 docker compose up --build
 ```
 
-Open [http://localhost:8000](http://localhost:8000). Done.
-
-> The ONNX model files (`neural_art_transfer.onnx` + `.onnx.data`) must be in the project root. If you don't have them, see **Training** below.
-
-## Manual Setup
-
-### Run the web app (inference only)
-
-```bash
-pip install -r requirements-docker.txt
-python inference.py
-```
-
-### Prepare Datasets (for training)
-
-Training requires two datasets structured as follows:
-```
-src/datasets/
-├── coco/
-│   └── train2017/         # Content images
-└── wikiart/               # Style images
-```
-
-1. **COCO 2017 (Content)**: Download the **2017 Train images** (18 GB) from the [COCO Dataset Download page](https://cocodataset.org/#download). Extract the images into `src/datasets/coco/train2017/`.
-2. **WikiArt (Style)**: Run the helper script to download the dataset via KaggleHub:
-   ```bash
-   pip install kagglehub
-   python src/download_data.py
-   ```
-   Copy the downloaded dataset contents from the cache path printed by the script into `src/datasets/wikiart/`.
-
-### Train from scratch
-
-```bash
-pip install -r requirements.txt
-cd src
-python train.py
-python save_as_onnx.py --checkpoint checkpoints/decoder_epoch_20.pth
-```
-
-Move the generated `.onnx` and `.onnx.data` files to the project root.
-
 ## Project Structure
 
 ```
-├── inference.py                FastAPI server + ONNX inference
+├── inference.py                FastAPI server + PyTorch L-BFGS optimization loop
 ├── static/                     Web frontend
 │   ├── index.html
 │   ├── style.css
-│   └── app.js
-├── src/                        Training code
-│   ├── model.py                ResNet50 encoder + decoder + full model
-│   ├── train.py                Training loop
-│   ├── utils.py                AdaIN, loss functions
-│   ├── dataset.py              Content/style dataset loader
-│   ├── save_as_onnx.py         Export trained model to ONNX
-│   └── download_data.py        Download WikiArt dataset
+│   ├── app.js
+│   └── styles/                 5 built-in style presets
+├── src/
+│   ├── model.py                VGG19 feature extractor matching the Gatys paper
+│   └── utils.py                Loss functions (Gram matrix, TV loss, etc.)
 ├── Dockerfile
 ├── docker-compose.yml
-├── requirements.txt            Everything (training + inference)
-└── requirements-docker.txt     Inference only
+├── requirements.txt            Dependencies
+└── requirements-docker.txt     Docker dependencies
 ```
 
 ## How It Works
 
-A frozen ResNet50 (up to layer3) encodes both images into feature maps. AdaIN (Adaptive Instance Normalization) aligns the content features' channel-wise mean and variance to match the style image's statistics. A learned decoder reconstructs the stylized image from the blended features. The style strength slider controls how much of the style statistics are applied vs. keeping the original content features.
+Unlike fast style transfer networks (like AdaIN) that use a single forward pass, this method starts with the content image and **iteratively optimizes its pixels** over 100 steps using the L-BFGS algorithm. 
+
+A pre-trained VGG19 network extracts feature maps at various depths. The optimizer works to minimize a combined loss function:
+- **Content Loss**: Mean squared error between the `conv4_2` features of the generated image and the content image.
+- **Style Loss**: Mean squared error between the Gram matrices of the `relu1_1`, `relu2_1`, `relu3_1`, `relu4_1`, and `relu5_1` features of the generated image and the style image.
+- **Total Variation (TV) Loss**: Smooths the image to reduce high-frequency noise.
+
+The style strength slider controls the ratio of style weight to content weight during optimization.
 
 ## GPU Support (Docker)
 
-Add this to `docker-compose.yml` under the `app` service and switch `onnxruntime` to `onnxruntime-gpu` in `requirements-docker.txt`:
+Add this to `docker-compose.yml` under the `app` service:
 
 ```yaml
 deploy:

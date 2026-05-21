@@ -5,7 +5,3 @@ numpy
 fastapi
 uvicorn[standard]
 python-multipart
-onnx
-onnxruntime
-tqdm
-kagglehub

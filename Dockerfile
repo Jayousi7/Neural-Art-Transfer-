@@ -6,8 +6,8 @@ COPY requirements-docker.txt .
 RUN pip install --no-cache-dir -r requirements-docker.txt
 
 COPY inference.py .
-COPY neural_art_transfer.onnx .
-COPY neural_art_transfer.onnx.data .
+COPY src/model.py src/model.py
+COPY src/utils.py src/utils.py
 COPY static/ static/
 
 EXPOSE 8000

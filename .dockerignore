@@ -1,7 +1,6 @@
 .git
 .venv
 __pycache__
-src/
 *.md
 .gitignore
 .env
