@@ -1,88 +1,151 @@
 const contentInput = document.getElementById('contentInput');
 const styleInput = document.getElementById('styleInput');
-const thresholdSlider = document.getElementById('thresholdSlider');
-const sliderValue = document.getElementById('sliderValue');
+const contentDrop = document.getElementById('contentDrop');
+const styleDrop = document.getElementById('styleDrop');
+const contentPreview = document.getElementById('contentPreview');
+const stylePreview = document.getElementById('stylePreview');
+const contentPlaceholder = document.getElementById('contentPlaceholder');
+const stylePlaceholder = document.getElementById('stylePlaceholder');
+const alphaSlider = document.getElementById('alphaSlider');
+const alphaValue = document.getElementById('alphaValue');
 const generateBtn = document.getElementById('generateBtn');
-const loader = document.getElementById('loader');
-const canvas = document.getElementById('studioCanvas');
-const ctx = canvas.getContext('2d');
+const btnText = document.getElementById('btnText');
+const btnLoader = document.getElementById('btnLoader');
+const resultImage = document.getElementById('resultImage');
+const downloadBtn = document.getElementById('downloadBtn');
+const emptyState = document.getElementById('emptyState');
+const presetBtns = document.querySelectorAll('.preset-btn');
 
-let originalImage = new Image();
-let stylizedImage = new Image();
-let hasStylizedImage = false;
+let presetStyleFile = null;
 
-contentInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            originalImage.onload = () => {
-                // Resize canvas to match the uploaded image dimensions
-                canvas.width = originalImage.width;
-                canvas.height = originalImage.height;
-                hasStylizedImage = false; // Reset style state
-                renderCanvas();
-            };
-            originalImage.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-});
+function setupDropzone(dropzone, input, preview, placeholder) {
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropzone.addEventListener(evt, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dragover');
+        });
+    });
 
-function renderCanvas() {
-    if (!originalImage.src) return;
+    ['dragleave', 'drop'].forEach(evt => {
+        dropzone.addEventListener(evt, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+        });
+    });
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    dropzone.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            showPreview(file, preview, placeholder, dropzone);
+            if (input === styleInput) {
+                presetStyleFile = null;
+                presetBtns.forEach(b => b.classList.remove('active'));
+            }
+        }
+    });
 
-    ctx.globalAlpha = 1.0;
-    ctx.drawImage(originalImage, 0, 0);
-
-    if (hasStylizedImage) {
-        const alpha = thresholdSlider.value / 100;
-        ctx.globalAlpha = alpha;
-        ctx.drawImage(stylizedImage, 0, 0);
-    }
+    input.addEventListener('change', () => {
+        if (input.files[0]) {
+            showPreview(input.files[0], preview, placeholder, dropzone);
+            if (input === styleInput) {
+                presetStyleFile = null;
+                presetBtns.forEach(b => b.classList.remove('active'));
+            }
+        }
+    });
 }
 
-thresholdSlider.addEventListener('input', (e) => {
-    sliderValue.textContent = `${e.target.value}%`;
-    renderCanvas(); 
+function showPreview(file, preview, placeholder, dropzone) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        preview.src = e.target.result;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        dropzone.classList.add('has-image');
+    };
+    reader.readAsDataURL(file);
+}
+
+function showPreviewFromUrl(url, preview, placeholder, dropzone) {
+    preview.src = url;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+    dropzone.classList.add('has-image');
+}
+
+setupDropzone(contentDrop, contentInput, contentPreview, contentPlaceholder);
+setupDropzone(styleDrop, styleInput, stylePreview, stylePlaceholder);
+
+presetBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const stylePath = btn.dataset.style;
+
+        presetBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        showPreviewFromUrl(stylePath, stylePreview, stylePlaceholder, styleDrop);
+
+        const response = await fetch(stylePath);
+        const blob = await response.blob();
+        const fileName = stylePath.split('/').pop();
+        presetStyleFile = new File([blob], fileName, { type: blob.type });
+    });
+});
+
+alphaSlider.addEventListener('input', e => {
+    alphaValue.textContent = `${e.target.value}%`;
 });
 
 generateBtn.addEventListener('click', async () => {
-    if (!contentInput.files[0] || !styleInput.files[0]) {
-        alert("Please select both a Content image and a Style reference image first!");
+    const styleFile = presetStyleFile || (styleInput.files[0] || null);
+
+    if (!contentInput.files[0] || !styleFile) {
+        alert('Please upload a content image and select a style.');
         return;
     }
 
     const formData = new FormData();
-    formData.append("content", contentInput.files[0]);
-    formData.append("style", styleInput.files[0]);
+    formData.append('content', contentInput.files[0]);
+    formData.append('style', styleFile);
+    formData.append('alpha', (alphaSlider.value / 100).toFixed(2));
 
-    loader.classList.remove('hidden');
+    btnText.classList.add('hidden');
+    btnLoader.classList.remove('hidden');
     generateBtn.disabled = true;
 
     try {
-        const response = await fetch('http://localhost:8000/api/style', {
+        const response = await fetch('/api/style', {
             method: 'POST',
             body: formData
         });
 
-        if (!response.ok) throw new Error("Server processed package with an error status.");
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
         const blob = await response.blob();
-        stylizedImage.onload = () => {
-            hasStylizedImage = true;
-            renderCanvas();
-            loader.classList.add('hidden');
+        const url = URL.createObjectURL(blob);
+
+        resultImage.onload = () => {
+            resultImage.classList.remove('hidden');
+            downloadBtn.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            btnText.classList.remove('hidden');
+            btnLoader.classList.add('hidden');
             generateBtn.disabled = false;
         };
-        stylizedImage.src = URL.createObjectURL(blob);
+
+        resultImage.src = url;
+        downloadBtn.href = url;
 
     } catch (error) {
-        console.error("API Pipeline broken:", error);
-        alert("Could not connect to the ML backend. Check console logs.");
-        loader.classList.add('hidden');
+        console.error('Style transfer failed:', error);
+        alert('Style transfer failed. Make sure the backend is running.');
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
         generateBtn.disabled = false;
     }
 });

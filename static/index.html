@@ -1,47 +1,131 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neural Art Studio - AI-powered style transfer using Adaptive Instance Normalization">
     <title>Neural Art Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Fixed typo: control-panel instead of control=panel -->
-        <div class="control-panel">
-            <h2>Neural Art Studio</h2>
-            <p class="subtitle">Style blending workspace</p>
-            
-            <div class="upload-section">
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>Neural Art Studio</h1>
+                <p class="tagline">AI-Powered Style Transfer</p>
+            </div>
+
+            <div class="upload-group">
                 <label>Content Image</label>
-                <input type="file" id="contentInput" accept="image/*">
-            </div>
-
-            <div class="upload-section">
-                <label>Style Image</label>
-                <input type="file" id="styleInput" accept="image/*">
-            </div>
-
-            <div class="slider-section">
-                <div class="slider-labels">
-                    <label for="thresholdSlider">Style Strength</label>
-                    <span id="sliderValue">80%</span>
+                <div class="dropzone" id="contentDrop">
+                    <input type="file" id="contentInput" accept="image/*">
+                    <div class="dropzone-placeholder" id="contentPlaceholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span>Drop or click to upload</span>
+                    </div>
+                    <img class="dropzone-preview hidden" id="contentPreview" alt="Content preview">
                 </div>
-                <!-- Removed commas between attributes -->
-                <input type="range" id="thresholdSlider" min="0" max="100" value="80">
             </div>
 
-            <!-- Standardized ID spelling to generateBtn -->
-            <button id="generateBtn">Generate</button>
-            <div id="loader" class="hidden">Processing on GPU...</div>
-        </div>
-
-        <div class="workspace">
-            <div class="canvas-container">
-                <canvas id="studioCanvas"></canvas>
+            <div class="upload-group">
+                <label>Style Reference</label>
+                <div class="dropzone" id="styleDrop">
+                    <input type="file" id="styleInput" accept="image/*">
+                    <div class="dropzone-placeholder" id="stylePlaceholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                            <path d="M2 2l7.586 7.586"/>
+                            <circle cx="11" cy="11" r="2"/>
+                        </svg>
+                        <span>Drop or click to upload</span>
+                    </div>
+                    <img class="dropzone-preview hidden" id="stylePreview" alt="Style preview">
+                </div>
             </div>
-        </div>
+
+            <div class="presets-group">
+                <label>Suggested Styles</label>
+                <div class="presets-grid">
+                    <button class="preset-btn" data-style="styles/starry_night.jpg">
+                        <img src="styles/starry_night.jpg" alt="Starry Night">
+                        <span>Starry Night</span>
+                    </button>
+                    <button class="preset-btn" data-style="styles/impressionism.jpg">
+                        <img src="styles/impressionism.jpg" alt="Impressionism">
+                        <span>Impressionism</span>
+                    </button>
+                    <button class="preset-btn" data-style="styles/ukiyo_e.jpg">
+                        <img src="styles/ukiyo_e.jpg" alt="Ukiyo-e">
+                        <span>Ukiyo-e</span>
+                    </button>
+                    <button class="preset-btn" data-style="styles/cubism.jpg">
+                        <img src="styles/cubism.jpg" alt="Cubism">
+                        <span>Cubism</span>
+                    </button>
+                    <button class="preset-btn" data-style="styles/pop_art.jpg">
+                        <img src="styles/pop_art.jpg" alt="Pop Art">
+                        <span>Pop Art</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <label for="alphaSlider">Style Strength</label>
+                    <span id="alphaValue">100%</span>
+                </div>
+                <input type="range" id="alphaSlider" min="0" max="100" value="100">
+            </div>
+
+            <button id="generateBtn">
+                <span class="btn-content" id="btnText">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Generate
+                </span>
+                <span class="btn-content hidden" id="btnLoader">
+                    <svg class="spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <path d="M12 2a10 10 0 0 1 10 10"/>
+                    </svg>
+                    Processing...
+                </span>
+            </button>
+        </aside>
+
+        <main class="workspace">
+            <div class="result-container">
+                <div class="empty-state" id="emptyState">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+                        <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+                        <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    <h2>Your masterpiece awaits</h2>
+                    <p>Upload a content image and a style reference, then hit Generate</p>
+                </div>
+                <img id="resultImage" class="hidden" alt="Stylized result">
+                <a id="downloadBtn" class="download-btn hidden" download="stylized.jpg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download
+                </a>
+            </div>
+        </main>
     </div>
     <script src="app.js"></script>
 </body>
