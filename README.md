@@ -2,7 +2,8 @@
 
 High-quality neural style transfer using the optimization-based method originally proposed by Gatys et al. (2015). Drop in a content image and a style image, adjust the style strength slider, and watch the image optimize in the background. 
 
-![preview](static/preview.png)
+![preview](Neural-Art-Transfer-/assets/just.jpg)
+![preview](Neural-Art-Transfer-/assets/just_style.jpg)
 
 ## Quick Start
 
