@@ -36,7 +36,7 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu13
 ### 2. Run the app
 
 ```bash
-python inference.py
+uvicorn inference:app --reload
 ```
 
 Open [http://localhost:8000](http://localhost:8000). Pick a style, upload a photo, and click Generate.
