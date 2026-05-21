@@ -61,7 +61,9 @@ def style_transfer_endpoint(
 
         optimizing_img = content_norm.clone().requires_grad_(True)
 
-        style_weights = [500.0, 300.0, 100.0, 50.0, 50.0]
+        style_weights = [500.0, 300.0, 200.0, 100.0, 50.0]
+        style_weights = [i * alpha for i in style_weights]
+
         
         with torch.no_grad():
             target_style_features, _ = model(style_norm)
@@ -69,9 +71,9 @@ def style_transfer_endpoint(
             _, target_content_features = model(content_norm)
 
         base_content_weight = 1.0
-        base_style_weight = 1e4 * max(0.01, alpha)
+        base_style_weight = 1e5 * max(0.01, alpha)
         
-        optimizer = LBFGS([optimizing_img], max_iter=100)
+        optimizer = LBFGS([optimizing_img], max_iter=300)
 
         run = [0]
         def closure():
