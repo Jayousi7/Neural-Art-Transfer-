@@ -6,7 +6,7 @@ ARG DEVICE=cpu
 
 COPY requirements-docker.txt .
 RUN if [ "$DEVICE" = "gpu" ]; then \
-        pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu126; \
+        pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu13; \
     else \
         pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu; \
     fi && \
