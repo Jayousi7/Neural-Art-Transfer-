@@ -54,7 +54,7 @@ async def run_style_transfer(content_bytes, style_bytes,alpha,websocket):
     base_content_weight = 1.0
     base_style_weight = 1e5 * max(0.01, alpha)
 
-    optimizer = Adam([optimizing_img], lr=0.1)
+    optimizer = Adam([optimizing_img], lr=0.1*alpha)
     iter = 500
     for step in range(iter):
         optimizer.zero_grad()
