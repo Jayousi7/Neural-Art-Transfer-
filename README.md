@@ -36,12 +36,13 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu13
 ### 2. Run the app
 
 ```bash
-uvicorn inference:app --reload
+python app.py
 ```
+
 
 Open [http://localhost:8000](http://localhost:8000). Pick a style, upload a photo, and click Generate.
 
-> **Note**: Because this uses the Gatys optimization method, image generation takes time (around 10-30 seconds depending on your hardware) as it runs 100 steps of gradient descent using L-BFGS.
+> **Note**: Because this uses the Gatys optimization method, image generation takes time (around 10-30 seconds depending on your hardware) as it runs 500 steps of gradient descent using Adam.
 
 ## Docker
 
@@ -52,11 +53,13 @@ docker compose up --build
 ## Project Structure
 
 ```
-├── inference.py                FastAPI server + PyTorch L-BFGS optimization loop
+├── app.py                      FastAPI web server (WebSockets)
+├── inference.py                PyTorch Adam optimization loop
 ├── static/                     Web frontend
 │   ├── index.html
 │   ├── style.css
 │   ├── app.js
+    ├── background.png          web page background 
 │   └── styles/                 5 built-in style presets
 ├── src/
 │   ├── model.py                VGG19 feature extractor matching the Gatys paper
@@ -69,7 +72,7 @@ docker compose up --build
 
 ## How It Works
 
-Unlike fast style transfer networks (like AdaIN) that use a single forward pass, this method starts with the content image and **iteratively optimizes its pixels** over 100 steps using the L-BFGS algorithm. 
+Unlike fast style transfer networks (like AdaIN) that use a single forward pass, this method starts with the content image and **iteratively optimizes its pixels** over 500 steps using the Adam algorithm. 
 
 A pre-trained VGG19 network extracts feature maps at various depths. The optimizer works to minimize a combined loss function:
 - **Content Loss**: Mean squared error between the `conv4_2` features of the generated image and the content image.

@@ -114,38 +114,68 @@ generateBtn.addEventListener('click', async () => {
     formData.append('style', styleFile);
     formData.append('alpha', (alphaSlider.value / 100).toFixed(2));
 
+
     btnText.classList.add('hidden');
     btnLoader.classList.remove('hidden');
+
     generateBtn.disabled = true;
 
-    try {
-        const response = await fetch('/api/style', {
-            method: 'POST',
-            body: formData
-        });
+    const progressTrack = document.getElementById('progressTrack');
+    if (progressTrack) progressTrack.classList.remove('hidden');
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/style`);
 
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    ws.onopen = async () => {
+        ws.send(await contentInput.files[0].arrayBuffer());
+        ws.send(await styleFile.arrayBuffer());
+        ws.send((alphaSlider.value / 100).toFixed(2));
+    };
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
+    ws.onmessage = (event) => {
+        if (typeof event.data === 'string'){
+            const currentStep = parseInt(event.data);
+            const totalSteps = 500;
+            const precent = Math.round((currentStep/totalSteps)*100);
+
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar){
+                progressBar.style.width = `${precent}%`;
+            }
+
+            const progressText = document.getElementById('progressText')
+            if(progressText){
+                progressText.innerText = `${precent}%`;
+            }
+        }
+        else {
+        // 3. Every time a new frame arrives, update the image source instantly!
+        const url = URL.createObjectURL(event.data);
 
         resultImage.onload = () => {
             resultImage.classList.remove('hidden');
             downloadBtn.classList.remove('hidden');
             emptyState.classList.add('hidden');
-            btnText.classList.remove('hidden');
-            btnLoader.classList.add('hidden');
-            generateBtn.disabled = false;
         };
 
         resultImage.src = url;
         downloadBtn.href = url;
+    }
 
-    } catch (error) {
-        console.error('Style transfer failed:', error);
-        alert('Style transfer failed. Make sure the backend is running.');
+    ws.onclose = () => {
+        // 4. Reset the UI when the generation is complete
         btnText.classList.remove('hidden');
         btnLoader.classList.add('hidden');
         generateBtn.disabled = false;
-    }
-});
+        if (progressTrack) progressTrack.classList.add('hidden');
+
+    };
+
+    ws.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+        alert('Connection failed.');
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+        generateBtn.disabled = false;
+        if (progressTrack) progressTrack.classList.add('hidden');
+
+    }}});

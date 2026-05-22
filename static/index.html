@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
     <div class="app">
@@ -115,6 +115,10 @@
                     <h2>Your masterpiece awaits</h2>
                     <p>Upload a content image and a style reference, then hit Generate</p>
                 </div>
+                <div class="progress-track hidden" id="progressTrack" >
+                    <div class="progress-fill" id="progressBar"></div>
+                    <span id="progressText">0%</span>
+                </div>
                 <img id="resultImage" class="hidden" alt="Stylized result">
                 <a id="downloadBtn" class="download-btn hidden" download="stylized.jpg">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -127,6 +131,6 @@
             </div>
         </main>
     </div>
-    <script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

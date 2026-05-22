@@ -1,0 +1,20 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="lap" />
+          <option value="nvidia-cublas-cu12" />
+          <option value="nvidia-cuda-nvrtc-cu12" />
+          <option value="nvidia-cuda-runtime-cu12" />
+          <option value="nvidia-cudnn-cu12" />
+          <option value="nvidia-cufft-cu12" />
+          <option value="nvidia-curand-cu12" />
+          <option value="nvidia-nvjitlink-cu12" />
+          <option value="onnxruntime-gpu" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
