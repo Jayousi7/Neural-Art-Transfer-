@@ -59,7 +59,7 @@ docker compose up --build
 │   ├── index.html
 │   ├── style.css
 │   ├── app.js
-    ├── background.png          web page background 
+│   ├── background.png          web page background 
 │   └── styles/                 5 built-in style presets
 ├── src/
 │   ├── model.py                VGG19 feature extractor matching the Gatys paper
