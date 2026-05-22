@@ -46,8 +46,16 @@ Open [http://localhost:8000](http://localhost:8000). Pick a style, upload a phot
 
 ## Docker
 
+You can run the application in Docker using either your CPU (lightweight image) or an NVIDIA GPU.
+
+**Run on CPU:**
 ```bash
-docker compose up --build
+docker compose --profile cpu up --build
+```
+
+**Run on GPU (Requires NVIDIA Container Toolkit):**
+```bash
+docker compose --profile gpu up --build
 ```
 
 ## Project Structure
@@ -81,18 +89,4 @@ A pre-trained VGG19 network extracts feature maps at various depths. The optimiz
 
 The style strength slider controls the ratio of style weight to content weight during optimization.
 
-## GPU Support (Docker)
 
-Add this to `docker-compose.yml` under the `app` service:
-
-```yaml
-deploy:
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          count: 1
-          capabilities: [gpu]
-```
-
-Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).

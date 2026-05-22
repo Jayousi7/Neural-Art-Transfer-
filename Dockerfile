@@ -2,8 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ARG DEVICE=cpu
+
 COPY requirements-docker.txt .
-RUN pip install --no-cache-dir -r requirements-docker.txt
+RUN if [ "$DEVICE" = "gpu" ]; then \
+        pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121; \
+    else \
+        pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu; \
+    fi && \
+    pip install --no-cache-dir -r requirements-docker.txt
 
 COPY app.py inference.py ./ 
 COPY src/model.py src/model.py

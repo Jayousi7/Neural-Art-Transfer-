@@ -1,5 +1,25 @@
 services:
-  app:
-    build: .
+  cpu:
+    build:
+      context: .
+      args:
+        DEVICE: cpu
     ports:
       - "8000:8000"
+    profiles: ["cpu"]
+
+  gpu:
+    build:
+      context: .
+      args:
+        DEVICE: gpu
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles: ["gpu"]
