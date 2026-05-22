@@ -6,6 +6,8 @@ services:
         DEVICE: cpu
     ports:
       - "8000:8000"
+    volumes:
+      - torch_cache:/root/.cache/torch/hub/checkpoints
     profiles: ["cpu"]
 
   gpu:
@@ -15,6 +17,8 @@ services:
         DEVICE: gpu
     ports:
       - "8000:8000"
+    volumes:
+      - torch_cache:/root/.cache/torch/hub/checkpoints
     deploy:
       resources:
         reservations:
@@ -23,3 +27,6 @@ services:
               count: 1
               capabilities: [gpu]
     profiles: ["gpu"]
+
+volumes:
+  torch_cache:
